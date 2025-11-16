@@ -86,7 +86,7 @@ public final class AnthropicApi {
 
 	public static final String DEFAULT_ANTHROPIC_VERSION = "2023-06-01";
 
-	public static final String DEFAULT_ANTHROPIC_BETA_VERSION = "tools-2024-04-04,pdfs-2024-09-25";
+	public static final String DEFAULT_ANTHROPIC_BETA_VERSION = "tools-2024-04-04,pdfs-2024-09-25,structured-outputs-2025-11-13";
 
 	public static final String BETA_EXTENDED_CACHE_TTL = "extended-cache-ttl-2025-04-11";
 
@@ -530,18 +530,20 @@ public final class AnthropicApi {
 		@JsonProperty("top_k") Integer topK,
 		@JsonProperty("tools") List<Tool> tools,
 		@JsonProperty("tool_choice") ToolChoice toolChoice,
-		@JsonProperty("thinking") ThinkingConfig thinking) {
+		@JsonProperty("thinking") ThinkingConfig thinking,
+		@JsonProperty("output_format") OutputFormat outputFormat) {
 		// @formatter:on
 
 		public ChatCompletionRequest(String model, List<AnthropicMessage> messages, Object system, Integer maxTokens,
 				Double temperature, Boolean stream) {
-			this(model, messages, system, maxTokens, null, null, stream, temperature, null, null, null, null, null);
+			this(model, messages, system, maxTokens, null, null, stream, temperature, null, null, null, null, null,
+					null);
 		}
 
 		public ChatCompletionRequest(String model, List<AnthropicMessage> messages, Object system, Integer maxTokens,
 				List<String> stopSequences, Double temperature, Boolean stream) {
 			this(model, messages, system, maxTokens, null, stopSequences, stream, temperature, null, null, null, null,
-					null);
+					null, null);
 		}
 
 		public static ChatCompletionRequestBuilder builder() {
@@ -550,6 +552,15 @@ public final class AnthropicApi {
 
 		public static ChatCompletionRequestBuilder from(ChatCompletionRequest request) {
 			return new ChatCompletionRequestBuilder(request);
+		}
+
+		@JsonInclude(Include.NON_NULL)
+		public record OutputFormat(@JsonProperty("type") String type,
+				@JsonProperty("schema") Map<String, Object> schema) {
+
+			public OutputFormat(String jsonSchema) {
+				this("json_schema", ModelOptionsUtils.jsonToMap(jsonSchema));
+			}
 		}
 
 		/**
@@ -619,6 +630,8 @@ public final class AnthropicApi {
 
 		private ChatCompletionRequest.ThinkingConfig thinking;
 
+		private ChatCompletionRequest.OutputFormat outputFormat;
+
 		private ChatCompletionRequestBuilder() {
 		}
 
@@ -636,6 +649,7 @@ public final class AnthropicApi {
 			this.tools = request.tools;
 			this.toolChoice = request.toolChoice;
 			this.thinking = request.thinking;
+			this.outputFormat = request.outputFormat;
 		}
 
 		public ChatCompletionRequestBuilder model(ChatModel model) {
@@ -713,10 +727,15 @@ public final class AnthropicApi {
 			return this;
 		}
 
+		public ChatCompletionRequestBuilder outputFormat(ChatCompletionRequest.OutputFormat outputFormat) {
+			this.outputFormat = outputFormat;
+			return this;
+		}
+
 		public ChatCompletionRequest build() {
 			return new ChatCompletionRequest(this.model, this.messages, this.system, this.maxTokens, this.metadata,
 					this.stopSequences, this.stream, this.temperature, this.topP, this.topK, this.tools,
-					this.toolChoice, this.thinking);
+					this.toolChoice, this.thinking, this.outputFormat);
 		}
 
 	}

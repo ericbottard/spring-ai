@@ -274,6 +274,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
+		<kotlin.compiler.version>2.2.21</kotlin.compiler.version>
 
 		<!-- production dependencies -->
 		<spring-boot.version>3.5.7</spring-boot.version>
@@ -282,7 +283,7 @@
 		<openai-sdk.version>4.8.0</openai-sdk.version>
 		<azure-identity.version>1.18.1</azure-identity.version>
 		<jtokkit.version>1.1.0</jtokkit.version>
-		<kotlin.version>1.9.25</kotlin.version>
+		<kotlin.version>2.2.21</kotlin.version>
 
 		<!-- NOTE: keep bedrockruntime and awssdk versions aligned -->
 		<bedrockruntime.version>2.36.3</bedrockruntime.version>
@@ -421,7 +422,7 @@
 			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-maven-plugin</artifactId>
-				<version>${kotlin.version}</version>
+				<version>${kotlin.compiler.version}</version>
 				<configuration>
 					<jvmTarget>${java.version}</jvmTarget>
 					<javaParameters>true</javaParameters>

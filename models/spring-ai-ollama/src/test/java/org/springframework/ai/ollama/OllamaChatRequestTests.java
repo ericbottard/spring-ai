@@ -67,13 +67,13 @@ class OllamaChatRequestTests {
 			.defaultOptions(defaultOptions)
 			.build();
 
-		OllamaChatOptions runtimeOptions = OllamaChatOptions.builder()
+		var runtimeOptions = OllamaChatOptions.builder()
 			.internalToolExecutionEnabled(false)
 			.toolCallbacks(new TestToolCallback("tool3"), new TestToolCallback("tool4"))
 			.toolNames("tool3")
-			.toolContext(Map.of("key2", "valueB"))
-			.build();
-		Prompt prompt = chatModel.buildRequestPrompt(new Prompt("Test message content", runtimeOptions));
+			.toolContext(Map.of("key2", "valueB"));
+		Prompt prompt = chatModel.buildRequestPrompt(
+				Prompt.builder().content("Test message content").chatOptionsNew(runtimeOptions).build());
 
 		assertThat(((ToolCallingChatOptions) prompt.getOptions())).isNotNull();
 		assertThat(((ToolCallingChatOptions) prompt.getOptions()).getInternalToolExecutionEnabled()).isFalse();
@@ -88,7 +88,7 @@ class OllamaChatRequestTests {
 
 	@Test
 	void createRequestWithDefaultOptions() {
-		var prompt = this.chatModel.buildRequestPrompt(new Prompt("Test message content"));
+		var prompt = this.chatModel.buildRequestPrompt(Prompt.builder().content("Test message content").build());
 
 		var request = this.chatModel.ollamaChatRequest(prompt, false);
 
@@ -105,8 +105,9 @@ class OllamaChatRequestTests {
 	@Test
 	void createRequestWithPromptOllamaOptions() {
 		// Runtime options should override the default options.
-		OllamaChatOptions promptOptions = OllamaChatOptions.builder().temperature(0.8).topP(0.5).numGPU(2).build();
-		var prompt = this.chatModel.buildRequestPrompt(new Prompt("Test message content", promptOptions));
+		var promptOptions = OllamaChatOptions.builder().temperature(0.8).topP(0.5).numGPU(2);
+		var prompt = this.chatModel
+			.buildRequestPrompt(Prompt.builder().content("Test message content").chatOptionsNew(promptOptions).build());
 
 		var request = this.chatModel.ollamaChatRequest(prompt, true);
 
@@ -126,8 +127,9 @@ class OllamaChatRequestTests {
 	@Test
 	void createRequestWithPromptOllamaChatOptions() {
 		// Runtime options should override the default options.
-		OllamaChatOptions promptOptions = OllamaChatOptions.builder().temperature(0.8).topP(0.5).numGPU(2).build();
-		var prompt = this.chatModel.buildRequestPrompt(new Prompt("Test message content", promptOptions));
+		var promptOptions = OllamaChatOptions.builder().temperature(0.8).topP(0.5).numGPU(2);
+		var prompt = this.chatModel
+			.buildRequestPrompt(Prompt.builder().content("Test message content").chatOptionsNew(promptOptions).build());
 
 		var request = this.chatModel.ollamaChatRequest(prompt, true);
 
@@ -147,8 +149,9 @@ class OllamaChatRequestTests {
 	@Test
 	public void createRequestWithPromptPortableChatOptions() {
 		// Ollama runtime options.
-		ChatOptions portablePromptOptions = ChatOptions.builder().temperature(0.9).topK(100).topP(0.6).build();
-		var prompt = this.chatModel.buildRequestPrompt(new Prompt("Test message content", portablePromptOptions));
+		var portablePromptOptions = ChatOptions.builder().temperature(0.9).topK(100).topP(0.6);
+		var prompt = this.chatModel.buildRequestPrompt(
+				Prompt.builder().content("Test message content").chatOptionsNew(portablePromptOptions).build());
 
 		var request = this.chatModel.ollamaChatRequest(prompt, true);
 
@@ -165,8 +168,9 @@ class OllamaChatRequestTests {
 	@Test
 	public void createRequestWithPromptOptionsModelOverride() {
 		// Ollama runtime options.
-		OllamaChatOptions promptOptions = OllamaChatOptions.builder().model("PROMPT_MODEL").build();
-		var prompt = this.chatModel.buildRequestPrompt(new Prompt("Test message content", promptOptions));
+		var promptOptions = OllamaChatOptions.builder().model("PROMPT_MODEL");
+		var prompt = this.chatModel
+			.buildRequestPrompt(Prompt.builder().content("Test message content").chatOptionsNew(promptOptions).build());
 
 		var request = this.chatModel.ollamaChatRequest(prompt, true);
 
@@ -181,15 +185,16 @@ class OllamaChatRequestTests {
 			.retryTemplate(RetryUtils.DEFAULT_RETRY_TEMPLATE)
 			.build();
 
-		var prompt1 = chatModel.buildRequestPrompt(new Prompt("Test message content"));
+		var prompt1 = chatModel.buildRequestPrompt(Prompt.builder().content("Test message content").build());
 
 		var request = chatModel.ollamaChatRequest(prompt1, true);
 
 		assertThat(request.model()).isEqualTo("DEFAULT_OPTIONS_MODEL");
 
 		// Prompt options should override the default options.
-		OllamaChatOptions promptOptions = OllamaChatOptions.builder().model("PROMPT_MODEL").build();
-		var prompt2 = chatModel.buildRequestPrompt(new Prompt("Test message content", promptOptions));
+		var promptOptions = OllamaChatOptions.builder().model("PROMPT_MODEL");
+		var prompt2 = chatModel
+			.buildRequestPrompt(Prompt.builder().content("Test message content").chatOptionsNew(promptOptions).build());
 
 		request = chatModel.ollamaChatRequest(prompt2, true);
 
@@ -204,15 +209,16 @@ class OllamaChatRequestTests {
 			.retryTemplate(RetryUtils.DEFAULT_RETRY_TEMPLATE)
 			.build();
 
-		var prompt1 = chatModel.buildRequestPrompt(new Prompt("Test message content"));
+		var prompt1 = chatModel.buildRequestPrompt(Prompt.builder().content("Test message content").build());
 
 		var request = chatModel.ollamaChatRequest(prompt1, true);
 
 		assertThat(request.model()).isEqualTo("DEFAULT_OPTIONS_MODEL");
 
 		// Prompt options should override the default options.
-		OllamaChatOptions promptOptions = OllamaChatOptions.builder().model("PROMPT_MODEL").build();
-		var prompt2 = chatModel.buildRequestPrompt(new Prompt("Test message content", promptOptions));
+		var promptOptions = OllamaChatOptions.builder().model("PROMPT_MODEL");
+		var prompt2 = chatModel
+			.buildRequestPrompt(Prompt.builder().content("Test message content").chatOptionsNew(promptOptions).build());
 
 		request = chatModel.ollamaChatRequest(prompt2, true);
 
@@ -221,7 +227,8 @@ class OllamaChatRequestTests {
 
 	@Test
 	void createRequestWithAllMessageTypes() {
-		var prompt = this.chatModel.buildRequestPrompt(new Prompt(createMessagesWithAllMessageTypes()));
+		var prompt = this.chatModel
+			.buildRequestPrompt(Prompt.builder().messages(createMessagesWithAllMessageTypes()).build());
 
 		var request = this.chatModel.ollamaChatRequest(prompt, false);
 

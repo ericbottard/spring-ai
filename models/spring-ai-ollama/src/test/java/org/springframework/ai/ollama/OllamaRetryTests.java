@@ -91,7 +91,7 @@ class OllamaRetryTests {
 			.thenThrow(new TransientAiException("Transient Error 2"))
 			.thenReturn(expectedChatResponse);
 
-		var result = this.chatModel.call(new Prompt(promptText));
+		var result = this.chatModel.call(Prompt.builder().content(promptText).build());
 
 		assertThat(result).isNotNull();
 		assertThat(result.getResult().getOutput().getText()).isSameAs("Response");
@@ -108,7 +108,7 @@ class OllamaRetryTests {
 
 		when(this.ollamaApi.chat(isA(OllamaApi.ChatRequest.class))).thenReturn(expectedChatResponse);
 
-		var result = this.chatModel.call(new Prompt(promptText));
+		var result = this.chatModel.call(Prompt.builder().content(promptText).build());
 
 		assertThat(result).isNotNull();
 		assertThat(result.getResult().getOutput().getText()).isEqualTo("Quick response");
@@ -124,7 +124,7 @@ class OllamaRetryTests {
 		when(this.ollamaApi.chat(isA(OllamaApi.ChatRequest.class)))
 			.thenThrow(new NonTransientAiException("Model not found"));
 
-		assertThatThrownBy(() -> this.chatModel.call(new Prompt(promptText)))
+		assertThatThrownBy(() -> this.chatModel.call(Prompt.builder().content(promptText).build()))
 			.isInstanceOf(NonTransientAiException.class)
 			.hasMessage("Model not found");
 
@@ -136,7 +136,7 @@ class OllamaRetryTests {
 	@Test
 	void ollamaChatWithMultipleMessages() {
 		List<Message> messages = List.of(new UserMessage("What is AI?"), new UserMessage("Explain machine learning"));
-		Prompt prompt = new Prompt(messages);
+		Prompt prompt = Prompt.builder().messages(messages).build();
 
 		var expectedChatResponse = new OllamaApi.ChatResponse("CHAT_COMPLETION_ID", Instant.now(),
 				OllamaApi.Message.builder(OllamaApi.Message.Role.ASSISTANT)
@@ -159,7 +159,7 @@ class OllamaRetryTests {
 	@Test
 	void ollamaChatWithCustomOptions() {
 		String promptText = "Custom temperature request";
-		OllamaChatOptions customOptions = OllamaChatOptions.builder().model(MODEL).temperature(0.1).topP(0.9).build();
+		var customOptions = OllamaChatOptions.builder().model(MODEL).temperature(0.1).topP(0.9);
 
 		var expectedChatResponse = new OllamaApi.ChatResponse("CHAT_COMPLETION_ID", Instant.now(),
 				OllamaApi.Message.builder(OllamaApi.Message.Role.ASSISTANT).content("Deterministic response").build(),
@@ -169,7 +169,7 @@ class OllamaRetryTests {
 			.thenThrow(new ResourceAccessException("Connection timeout"))
 			.thenReturn(expectedChatResponse);
 
-		var result = this.chatModel.call(new Prompt(promptText, customOptions));
+		var result = this.chatModel.call(Prompt.builder().content(promptText).chatOptionsNew(customOptions).build());
 
 		assertThat(result).isNotNull();
 		assertThat(result.getResult().getOutput().getText()).isEqualTo("Deterministic response");
@@ -187,7 +187,7 @@ class OllamaRetryTests {
 			.thenThrow(new TransientAiException("Rate limit exceeded"))
 			.thenReturn(expectedChatResponse);
 
-		var result = this.chatModel.call(new Prompt(promptText));
+		var result = this.chatModel.call(Prompt.builder().content(promptText).build());
 
 		assertThat(result).isNotNull();
 		assertThat(result.getResult().getOutput().getText()).isEmpty();

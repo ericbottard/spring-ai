@@ -112,17 +112,24 @@ class OllamaChatModelIT extends BaseOllamaIT {
 		UserMessage userMessage = new UserMessage("Tell me about 5 famous pirates from the Golden Age of Piracy.");
 
 		// portable/generic options
-		var portableOptions = ChatOptions.builder().temperature(0.7).build();
+		var portableOptions = ChatOptions.builder().temperature(0.7);
 
-		Prompt prompt = new Prompt(List.of(systemMessage, userMessage), portableOptions);
+		Prompt prompt = Prompt.builder()
+			.messages(List.of(systemMessage, userMessage))
+			.chatOptionsNew(portableOptions)
+			.build();
 
 		ChatResponse response = this.chatModel.call(prompt);
 		verifyMostFamousPiratePresence(response);
 
 		// ollama specific options
-		var ollamaOptions = OllamaChatOptions.builder().lowVRAM(true).build();
+		var ollamaOptions = OllamaChatOptions.builder().lowVRAM(true);
 
-		response = this.chatModel.call(new Prompt(List.of(systemMessage, userMessage), ollamaOptions));
+		Prompt prompt2 = Prompt.builder()
+			.messages(List.of(systemMessage, userMessage))
+			.chatOptionsNew(ollamaOptions)
+			.build();
+		response = this.chatModel.call(prompt2);
 		verifyMostFamousPiratePresence(response);
 	}
 
@@ -138,20 +145,22 @@ class OllamaChatModelIT extends BaseOllamaIT {
 		UserMessage userMessage = new UserMessage(
 				"Tell me about 5 famous pirates from the Golden Age of Piracy and why they did.");
 
-		Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
+		Prompt prompt = Prompt.builder().messages(systemMessage, userMessage).build();
 
 		ChatResponse response = this.chatModel.call(prompt);
 		verifyMostFamousPiratePresence(response);
 
-		var promptWithMessageHistory = new Prompt(List.of(new UserMessage("Hello"), response.getResult().getOutput(),
-				new UserMessage("Tell me just the names of those pirates.")));
+		var promptWithMessageHistory = Prompt.builder()
+			.messages(new UserMessage("Hello"), response.getResult().getOutput(),
+					new UserMessage("Tell me just the names of those pirates."))
+			.build();
 		response = this.chatModel.call(promptWithMessageHistory);
 		verifyMostFamousPiratePresence(response);
 	}
 
 	@Test
 	void usageTest() {
-		Prompt prompt = new Prompt("Tell me a joke");
+		Prompt prompt = Prompt.builder().content("Tell me a joke").build();
 		ChatResponse response = this.chatModel.call(prompt);
 		Usage usage = response.getMetadata().getUsage();
 
@@ -175,7 +184,7 @@ class OllamaChatModelIT extends BaseOllamaIT {
 			.template(template)
 			.variables(Map.of("subject", "ice cream flavors.", "format", format))
 			.build();
-		Prompt prompt = new Prompt(promptTemplate.createMessage());
+		Prompt prompt = Prompt.builder().messages(promptTemplate.createMessage()).build();
 		Generation generation = this.chatModel.call(prompt).getResult();
 		String outputText = generation.getOutput().getText();
 		assertThat(outputText).isNotNull();
@@ -197,7 +206,7 @@ class OllamaChatModelIT extends BaseOllamaIT {
 			.template(template)
 			.variables(Map.of("format", format))
 			.build();
-		Prompt prompt = new Prompt(promptTemplate.createMessage());
+		Prompt prompt = Prompt.builder().messages(promptTemplate.createMessage()).build();
 
 		Generation generation = this.chatModel.call(prompt).getResult();
 
@@ -223,7 +232,7 @@ class OllamaChatModelIT extends BaseOllamaIT {
 			.template(template)
 			.variables(Map.of("format", format))
 			.build();
-		Prompt prompt = new Prompt(promptTemplate.createMessage());
+		Prompt prompt = Prompt.builder().messages(promptTemplate.createMessage()).build();
 		Generation generation = this.chatModel.call(prompt).getResult();
 
 		String outputText = generation.getOutput().getText();
@@ -246,7 +255,7 @@ class OllamaChatModelIT extends BaseOllamaIT {
 			.template(template)
 			.variables(Map.of("format", format))
 			.build();
-		Prompt prompt = new Prompt(promptTemplate.createMessage());
+		Prompt prompt = Prompt.builder().messages(promptTemplate.createMessage()).build();
 
 		String generationTextFromStream = this.chatModel.stream(prompt)
 			.collectList()
@@ -274,7 +283,7 @@ class OllamaChatModelIT extends BaseOllamaIT {
 				""");
 		Map<String, Object> model = Map.of("country", "denmark");
 		var prompt = userPromptTemplate.create(model,
-				OllamaChatOptions.builder().format(outputConverter.getJsonSchemaMap()).build());
+				OllamaChatOptions.builder().format(outputConverter.getJsonSchemaMap()));
 
 		var chatResponse = this.chatModel.call(prompt);
 
@@ -289,8 +298,11 @@ class OllamaChatModelIT extends BaseOllamaIT {
 	@Test
 	void jsonStructuredOutputWithOutputSchemaOption() {
 		var jsonSchemaAsText = ResourceUtils.getText("classpath:country-json-schema.json");
-		var chatOptions = OllamaChatOptions.builder().outputSchema(jsonSchemaAsText).build();
-		var prompt = new Prompt("Tell me about Canada.", chatOptions);
+		var chatOptions = OllamaChatOptions.builder().outputSchema(jsonSchemaAsText);
+		// var prompt = new Prompt("Tell me about Canada.", (OllamaChatOptions)null,
+		// (ChatOptions.Builder)chatOptions);
+
+		var prompt = Prompt.builder().content("Tell me about Canada").chatOptionsNew(chatOptions).build();
 
 		var chatResponse = this.chatModel.call(prompt);
 
@@ -365,14 +377,14 @@ class OllamaChatModelIT extends BaseOllamaIT {
 
 		UserMessage userMessage1 = new UserMessage("My name is James Bond");
 		memory.add(conversationId, userMessage1);
-		ChatResponse response1 = this.chatModel.call(new Prompt(memory.get(conversationId)));
+		ChatResponse response1 = this.chatModel.call(Prompt.builder().messages(memory.get(conversationId)).build());
 
 		assertThat(response1).isNotNull();
 		memory.add(conversationId, response1.getResult().getOutput());
 
 		UserMessage userMessage2 = new UserMessage("What is my name?");
 		memory.add(conversationId, userMessage2);
-		ChatResponse response2 = this.chatModel.call(new Prompt(memory.get(conversationId)));
+		ChatResponse response2 = this.chatModel.call(Prompt.builder().messages(memory.get(conversationId)).build());
 
 		assertThat(response2).isNotNull();
 		memory.add(conversationId, response2.getResult().getOutput());
@@ -387,16 +399,19 @@ class OllamaChatModelIT extends BaseOllamaIT {
 		ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
 		String conversationId = UUID.randomUUID().toString();
 
-		ChatOptions chatOptions = ToolCallingChatOptions.builder()
+		var chatOptions = ToolCallingChatOptions.builder()
 			.toolCallbacks(ToolCallbacks.from(new MathTools()))
-			.internalToolExecutionEnabled(false)
+			.internalToolExecutionEnabled(false);
+		Prompt prompt = Prompt.builder()
+			.messages(new SystemMessage("You are a helpful assistant."), new UserMessage("What is 6 * 8?"))
+			.chatOptionsNew(chatOptions)
 			.build();
-		Prompt prompt = new Prompt(
-				List.of(new SystemMessage("You are a helpful assistant."), new UserMessage("What is 6 * 8?")),
-				chatOptions);
 		chatMemory.add(conversationId, prompt.getInstructions());
 
-		Prompt promptWithMemory = new Prompt(chatMemory.get(conversationId), chatOptions);
+		Prompt promptWithMemory = Prompt.builder()
+			.messages(chatMemory.get(conversationId))
+			.chatOptionsNew(chatOptions)
+			.build();
 		ChatResponse chatResponse = this.chatModel.call(promptWithMemory);
 		chatMemory.add(conversationId, chatResponse.getResult().getOutput());
 
@@ -405,7 +420,10 @@ class OllamaChatModelIT extends BaseOllamaIT {
 					chatResponse);
 			chatMemory.add(conversationId, toolExecutionResult.conversationHistory()
 				.get(toolExecutionResult.conversationHistory().size() - 1));
-			promptWithMemory = new Prompt(chatMemory.get(conversationId), chatOptions);
+			promptWithMemory = Prompt.builder()
+				.messages(chatMemory.get(conversationId))
+				.chatOptionsNew(chatOptions)
+				.build();
 			chatResponse = this.chatModel.call(promptWithMemory);
 			chatMemory.add(conversationId, chatResponse.getResult().getOutput());
 		}
@@ -416,7 +434,8 @@ class OllamaChatModelIT extends BaseOllamaIT {
 		UserMessage newUserMessage = new UserMessage("What did I ask you earlier?");
 		chatMemory.add(conversationId, newUserMessage);
 
-		ChatResponse newResponse = this.chatModel.call(new Prompt(chatMemory.get(conversationId)));
+		ChatResponse newResponse = this.chatModel
+			.call(Prompt.builder().messages(chatMemory.get(conversationId)).build());
 
 		assertThat(newResponse).isNotNull();
 		assertThat(newResponse.getResult().getOutput().getText()).contains("6").contains("8");

@@ -419,44 +419,10 @@ public class OllamaChatModel implements ChatModel {
 	}
 
 	Prompt buildRequestPrompt(Prompt prompt) {
-		// Process runtime options
-		OllamaChatOptions runtimeOptions = null;
-		if (prompt.getOptions() != null) {
-			if (prompt.getOptions() instanceof OllamaChatOptions ollamaChatOptions) {
-				runtimeOptions = ModelOptionsUtils.copyToTarget(OllamaChatOptions.fromOptions(ollamaChatOptions),
-						OllamaChatOptions.class, OllamaChatOptions.class);
-			}
-			else if (prompt.getOptions() instanceof ToolCallingChatOptions toolCallingChatOptions) {
-				runtimeOptions = ModelOptionsUtils.copyToTarget(toolCallingChatOptions, ToolCallingChatOptions.class,
-						OllamaChatOptions.class);
-			}
-			else {
-				runtimeOptions = ModelOptionsUtils.copyToTarget(prompt.getOptions(), ChatOptions.class,
-						OllamaChatOptions.class);
-			}
-		}
 
-		// Define request options by merging runtime options and default options
-		OllamaChatOptions requestOptions = ModelOptionsUtils.merge(runtimeOptions, this.defaultOptions,
-				OllamaChatOptions.class);
-		// Merge @JsonIgnore-annotated options explicitly since they are ignored by
-		// Jackson, used by ModelOptionsUtils.
-		if (runtimeOptions != null) {
-			requestOptions.setInternalToolExecutionEnabled(
-					ModelOptionsUtils.mergeOption(runtimeOptions.getInternalToolExecutionEnabled(),
-							this.defaultOptions.getInternalToolExecutionEnabled()));
-			requestOptions.setToolNames(ToolCallingChatOptions.mergeToolNames(runtimeOptions.getToolNames(),
-					this.defaultOptions.getToolNames()));
-			requestOptions.setToolCallbacks(ToolCallingChatOptions.mergeToolCallbacks(runtimeOptions.getToolCallbacks(),
-					this.defaultOptions.getToolCallbacks()));
-			requestOptions.setToolContext(ToolCallingChatOptions.mergeToolContext(runtimeOptions.getToolContext(),
-					this.defaultOptions.getToolContext()));
-		}
-		else {
-			requestOptions.setInternalToolExecutionEnabled(this.defaultOptions.getInternalToolExecutionEnabled());
-			requestOptions.setToolNames(this.defaultOptions.getToolNames());
-			requestOptions.setToolCallbacks(this.defaultOptions.getToolCallbacks());
-			requestOptions.setToolContext(this.defaultOptions.getToolContext());
+		OllamaChatOptions requestOptions = this.defaultOptions;
+		if (prompt.getOptionsCustomizer() != null) {
+			requestOptions = requestOptions.mutate().combineWith(prompt.getOptionsCustomizer()).build();
 		}
 
 		// Validate request options
@@ -517,14 +483,10 @@ public class OllamaChatModel implements ChatModel {
 			throw new IllegalArgumentException("Unsupported message type: " + message.getMessageType());
 		}).flatMap(List::stream).toList();
 
-		OllamaChatOptions requestOptions = null;
-		if (prompt.getOptions() instanceof OllamaChatOptions) {
-			requestOptions = (OllamaChatOptions) prompt.getOptions();
-		}
-		else {
-			requestOptions = OllamaChatOptions
-				.fromOptions((OllamaChatOptions) Objects.requireNonNull(prompt.getOptions()));
-		}
+		Assert.state(prompt.getOptions() instanceof OllamaChatOptions,
+				"options must be of type OllamaChatOptions (was %s)"
+					.formatted(prompt.getOptions() == null ? "null" : prompt.getOptions().getClass().getSimpleName()));
+		var requestOptions = (OllamaChatOptions) prompt.getOptions();
 
 		String model = requestOptions.getModel();
 		Assert.state(model != null, "model must not be null");

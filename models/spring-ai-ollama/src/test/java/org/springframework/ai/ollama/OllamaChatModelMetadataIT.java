@@ -57,9 +57,9 @@ class OllamaChatModelMetadataIT extends BaseOllamaIT {
 
 	@Test
 	void ollamaThinkingMetadataCaptured() {
-		var options = OllamaChatOptions.builder().model(MODEL).enableThinking().build();
+		var options = OllamaChatOptions.builder().model(MODEL).enableThinking();
 
-		Prompt prompt = new Prompt("Why is the sky blue?", options);
+		Prompt prompt = Prompt.builder().content("Why is the sky blue?").chatOptionsNew(options).build();
 
 		ChatResponse chatResponse = this.chatModel.call(prompt);
 		assertThat(chatResponse.getResult().getOutput().getText()).isNotEmpty();
@@ -76,9 +76,9 @@ class OllamaChatModelMetadataIT extends BaseOllamaIT {
 		// Note: Thinking-capable models (e.g., qwen3:*) auto-enable thinking by default
 		// in Ollama 0.12+.
 		// This test explicitly disables thinking to verify null metadata is returned.
-		var options = OllamaChatOptions.builder().model(MODEL).disableThinking().build();
+		var options = OllamaChatOptions.builder().model(MODEL).disableThinking();
 
-		Prompt prompt = new Prompt("Why is the sky blue?", options);
+		Prompt prompt = Prompt.builder().content("Why is the sky blue?").chatOptionsNew(options).build();
 
 		ChatResponse chatResponse = this.chatModel.call(prompt);
 		assertThat(chatResponse.getResult().getOutput().getText()).isNotEmpty();

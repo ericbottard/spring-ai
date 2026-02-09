@@ -46,7 +46,13 @@ public class Prompt implements ModelRequest<List<Message>> {
 
 	private final List<Message> messages;
 
-	private @Nullable ChatOptions chatOptions;
+	@Deprecated
+	private final @Nullable ChatOptions chatOptions;
+
+	private final ChatOptions.@Nullable Builder<?> optionsCustomizer;
+
+	// TODO: remove. For debugging purposes only, shows how Prompts were constructed
+	private final Exception ctorCause;
 
 	public Prompt(String contents) {
 		this(new UserMessage(contents));
@@ -57,11 +63,11 @@ public class Prompt implements ModelRequest<List<Message>> {
 	}
 
 	public Prompt(List<Message> messages) {
-		this(messages, null);
+		this(messages, (ChatOptions) null);
 	}
 
 	public Prompt(Message... messages) {
-		this(Arrays.asList(messages), null);
+		this(Arrays.asList(messages), (ChatOptions) null);
 	}
 
 	public Prompt(String contents, @Nullable ChatOptions chatOptions) {
@@ -77,6 +83,22 @@ public class Prompt implements ModelRequest<List<Message>> {
 		Assert.noNullElements(messages, "messages cannot contain null elements");
 		this.messages = messages;
 		this.chatOptions = chatOptions;
+		this.optionsCustomizer = null;
+		this.ctorCause = new Exception();
+		this.ctorCause.fillInStackTrace();
+	}
+
+	private Prompt(List<Message> messages, ChatOptions.@Nullable Builder<?> optionsCustomizer,
+			@Nullable ChatOptions chatOptions) {
+		Assert.notNull(messages, "messages cannot be null");
+		Assert.noNullElements(messages, "messages cannot contain null elements");
+		Assert.state(!(optionsCustomizer != null && chatOptions != null),
+				"Only one of optionsCustomizer and chatOptions cannot be null");
+		this.messages = messages;
+		this.chatOptions = chatOptions;
+		this.optionsCustomizer = optionsCustomizer;
+		this.ctorCause = new Exception();
+		this.ctorCause.fillInStackTrace();
 	}
 
 	public String getContents() {
@@ -87,9 +109,24 @@ public class Prompt implements ModelRequest<List<Message>> {
 		return sb.toString();
 	}
 
+	@Deprecated
 	@Override
 	public @Nullable ChatOptions getOptions() {
+		if (this.optionsCustomizer != null) {
+			throw new IllegalStateException("Prompt using customizer should not need to access getOptions()",
+					this.ctorCause);
+		}
 		return this.chatOptions;
+	}
+
+	public ChatOptions.@Nullable Builder<?> getOptionsCustomizer() {
+		// TODO remove (this.optionsCustomizer != null) part
+		if (this.chatOptions != null && this.optionsCustomizer != null) {
+			throw new IllegalStateException(
+					"Prompt accessing customizer should not have been built with options in the first place",
+					this.ctorCause);
+		}
+		return this.optionsCustomizer;
 	}
 
 	@Override
@@ -169,7 +206,7 @@ public class Prompt implements ModelRequest<List<Message>> {
 
 	@Override
 	public String toString() {
-		return "Prompt{" + "messages=" + this.messages + ", modelOptions=" + this.chatOptions + '}';
+		return "Prompt{" + "messages=" + this.messages + ", optionsCustomizer=" + this.optionsCustomizer + '}';
 	}
 
 	@Override
@@ -180,16 +217,17 @@ public class Prompt implements ModelRequest<List<Message>> {
 		if (!(o instanceof Prompt prompt)) {
 			return false;
 		}
-		return Objects.equals(this.messages, prompt.messages) && Objects.equals(this.chatOptions, prompt.chatOptions);
+		return Objects.equals(this.messages, prompt.messages) && Objects.equals(this.chatOptions, prompt.chatOptions)
+				&& Objects.equals(this.optionsCustomizer, prompt.optionsCustomizer);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(this.messages, this.chatOptions);
+		return Objects.hash(this.messages, this.chatOptions, this.optionsCustomizer);
 	}
 
 	public Prompt copy() {
-		return new Prompt(instructionsCopy(), null == this.chatOptions ? null : this.chatOptions.copy());
+		return mutate().build();
 	}
 
 	private List<Message> instructionsCopy() {
@@ -243,7 +281,7 @@ public class Prompt implements ModelRequest<List<Message>> {
 			// and add it as the first item in the list.
 			messagesCopy.add(0, systemMessageAugmenter.apply(new SystemMessage("")));
 		}
-		return new Prompt(messagesCopy, null == this.chatOptions ? null : this.chatOptions.copy());
+		return new Prompt(messagesCopy, this.optionsCustomizer, this.chatOptions);
 	}
 
 	/**
@@ -273,7 +311,7 @@ public class Prompt implements ModelRequest<List<Message>> {
 			}
 		}
 
-		return new Prompt(messagesCopy, null == this.chatOptions ? null : this.chatOptions.copy());
+		return new Prompt(messagesCopy, this.optionsCustomizer, this.chatOptions);
 	}
 
 	/**
@@ -290,6 +328,9 @@ public class Prompt implements ModelRequest<List<Message>> {
 		if (this.chatOptions != null) {
 			builder.chatOptions(this.chatOptions.copy());
 		}
+		if (this.optionsCustomizer != null) {
+			builder.chatOptionsNew(this.optionsCustomizer.build().mutate());
+		}
 		return builder;
 	}
 
@@ -297,9 +338,11 @@ public class Prompt implements ModelRequest<List<Message>> {
 		return new Builder();
 	}
 
-	public static final class Builder {
+	public static class Builder {
 
 		private @Nullable List<Message> messages;
+
+		private ChatOptions.@Nullable Builder<?> chatOptionsCustomizer;
 
 		private @Nullable ChatOptions chatOptions;
 
@@ -320,14 +363,19 @@ public class Prompt implements ModelRequest<List<Message>> {
 			return this;
 		}
 
-		public Builder chatOptions(ChatOptions chatOptions) {
+		public Builder chatOptions(@Nullable ChatOptions chatOptions) {
 			this.chatOptions = chatOptions;
+			return this;
+		}
+
+		public Builder chatOptionsNew(ChatOptions.@Nullable Builder<?> customizer) {
+			this.chatOptionsCustomizer = customizer;
 			return this;
 		}
 
 		public Prompt build() {
 			Assert.state(this.messages != null, "either messages or content needs to be set");
-			return new Prompt(this.messages, this.chatOptions);
+			return new Prompt(this.messages, this.chatOptionsCustomizer, this.chatOptions);
 		}
 
 	}

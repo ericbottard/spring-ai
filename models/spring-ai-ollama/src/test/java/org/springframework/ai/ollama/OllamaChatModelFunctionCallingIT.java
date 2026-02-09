@@ -68,10 +68,10 @@ class OllamaChatModelFunctionCallingIT extends BaseOllamaIT {
 				.description(
 						"Find the weather conditions, forecasts, and temperatures for a location, like a city or state.")
 				.inputType(MockWeatherService.Request.class)
-				.build()))
-			.build();
+				.build()));
 
-		ChatResponse response = this.chatModel.call(new Prompt(messages, promptOptions));
+		ChatResponse response = this.chatModel
+			.call(Prompt.builder().messages(messages).chatOptionsNew(promptOptions).build());
 
 		logger.info("Response: {}", response);
 
@@ -91,10 +91,10 @@ class OllamaChatModelFunctionCallingIT extends BaseOllamaIT {
 				.description(
 						"Find the weather conditions, forecasts, and temperatures for a location, like a city or state.")
 				.inputType(MockWeatherService.Request.class)
-				.build()))
-			.build();
+				.build()));
 
-		Flux<ChatResponse> response = this.chatModel.stream(new Prompt(messages, promptOptions));
+		Flux<ChatResponse> response = this.chatModel
+			.stream(Prompt.builder().messages(messages).chatOptionsNew(promptOptions).build());
 
 		String content = response.collectList()
 			.block()

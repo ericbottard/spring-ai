@@ -76,9 +76,9 @@ public final class ChatModelCallAdvisor implements CallAdvisor {
 
 		if (chatClientRequest.context().containsKey(ChatClientAttributes.STRUCTURED_OUTPUT_NATIVE.getKey())
 				&& StringUtils.hasText(outputSchema) && chatClientRequest.prompt()
-					.getOptions() instanceof StructuredOutputChatOptions structuredOutputChatOptions) {
+					.getOptionsCustomizer() instanceof StructuredOutputChatOptions.Builder<?> structuredOutputChatOptionsCustomizer) {
 
-			structuredOutputChatOptions.setOutputSchema(outputSchema);
+			structuredOutputChatOptionsCustomizer.outputSchema(outputSchema);
 
 			return chatClientRequest;
 		}

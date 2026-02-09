@@ -205,6 +205,11 @@ public class PromptTemplate implements PromptTemplateActions, PromptTemplateMess
 		return Prompt.builder().content(render(additionalVariables)).chatOptions(modelOptions).build();
 	}
 
+	// @Override // TODO put in interface
+	public Prompt create(Map<String, Object> additionalVariables, ChatOptions.Builder<?> chatOptions) {
+		return Prompt.builder().content(render(additionalVariables)).chatOptionsNew(chatOptions).build();
+	}
+
 	public Builder mutate() {
 		return new Builder().template(this.template).variables(this.variables).renderer(this.renderer);
 	}

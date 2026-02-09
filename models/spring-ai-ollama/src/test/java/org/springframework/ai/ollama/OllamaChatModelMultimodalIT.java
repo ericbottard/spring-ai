@@ -63,7 +63,7 @@ class OllamaChatModelMultimodalIT extends BaseOllamaIT {
 			.media(List.of(new Media(MimeTypeUtils.IMAGE_PNG, imageData)))
 			.build();
 
-		assertThatThrownBy(() -> this.chatModel.call(new Prompt(List.of(userMessage))))
+		assertThatThrownBy(() -> this.chatModel.call(Prompt.builder().messages(userMessage).build()))
 			.isInstanceOf(RuntimeException.class);
 	}
 
@@ -76,7 +76,7 @@ class OllamaChatModelMultimodalIT extends BaseOllamaIT {
 			.media(List.of(new Media(MimeTypeUtils.IMAGE_PNG, imageData)))
 			.build();
 
-		var response = this.chatModel.call(new Prompt(List.of(userMessage)));
+		var response = this.chatModel.call(Prompt.builder().messages(userMessage).build());
 
 		logger.info(response.getResult().getOutput().getText());
 		assertThat(response.getResult().getOutput().getText()).containsAnyOf("bananas", "apple", "bowl", "basket",

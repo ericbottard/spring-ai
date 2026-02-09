@@ -76,10 +76,9 @@ public class OllamaChatModelObservationIT extends BaseOllamaIT {
 			.stop(List.of("this-is-the-end"))
 			.temperature(0.7)
 			.topK(1)
-			.topP(1.0)
-			.build();
+			.topP(1.0);
 
-		Prompt prompt = new Prompt("Why does a raven look like a desk?", options);
+		Prompt prompt = Prompt.builder().content("Why does a raven look like a desk?").chatOptionsNew(options).build();
 
 		ChatResponse chatResponse = this.chatModel.call(prompt);
 		assertThat(chatResponse.getResult().getOutput().getText()).isNotEmpty();
@@ -100,10 +99,9 @@ public class OllamaChatModelObservationIT extends BaseOllamaIT {
 			.stop(List.of("this-is-the-end"))
 			.temperature(0.7)
 			.topK(1)
-			.topP(1.0)
-			.build();
+			.topP(1.0);
 
-		Prompt prompt = new Prompt("Why does a raven look like a desk?", options);
+		Prompt prompt = Prompt.builder().content("Why does a raven look like a desk?").chatOptionsNew(options).build();
 
 		Flux<ChatResponse> chatResponseFlux = this.chatModel.stream(prompt);
 

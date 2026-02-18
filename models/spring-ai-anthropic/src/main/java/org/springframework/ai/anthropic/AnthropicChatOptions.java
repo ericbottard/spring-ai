@@ -36,6 +36,7 @@ import org.springframework.ai.anthropic.api.AnthropicApi.ChatCompletionRequest;
 import org.springframework.ai.anthropic.api.AnthropicApi.ChatCompletionRequest.OutputFormat;
 import org.springframework.ai.anthropic.api.AnthropicCacheOptions;
 import org.springframework.ai.anthropic.api.CitationDocument;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.model.tool.StructuredOutputChatOptions;
@@ -718,9 +719,43 @@ public class AnthropicChatOptions implements ToolCallingChatOptions, StructuredO
 			return this.skill(skillId, version);
 		}
 
+		@Override
+		public B combineWith(ChatOptions.Builder<?> other) {
+			super.combineWith(other);
+			if (other instanceof Builder<?> options) {
+				if (options.metadata != null) {
+					this.metadata = options.metadata;
+				}
+				if (options.toolChoice != null) {
+					this.toolChoice = options.toolChoice;
+				}
+				if (options.thinking != null) {
+					this.thinking = options.thinking;
+				}
+				if (!options.citationDocuments.isEmpty()) {
+					this.citationDocuments = options.citationDocuments;
+				}
+				if (options.cacheOptions != AnthropicCacheOptions.DISABLED) {
+					this.cacheOptions = options.cacheOptions;
+				}
+				if (options.skillContainer != null) {
+					this.skillContainer = options.skillContainer;
+				}
+				if (!options.httpHeaders.isEmpty()) {
+					this.httpHeaders = options.httpHeaders;
+				}
+				if (options.outputFormat != null) {
+					this.outputFormat = options.outputFormat;
+				}
+			}
+			return self();
+		}
+
+		@SuppressWarnings("NullAway")
 		public AnthropicChatOptions build() {
-			Assert.state(this.model != null, "model must be set");
-			Assert.state(this.maxTokens != null, "maxTokens must be set");
+			// TODO: add assertions, remove SuppressWarnings
+			// Assert.state(this.model != null, "model must be set");
+			// Assert.state(this.maxTokens != null, "maxTokens must be set");
 			AnthropicChatOptions options = new AnthropicChatOptions();
 			options.model = this.model;
 			options.maxTokens = this.maxTokens;

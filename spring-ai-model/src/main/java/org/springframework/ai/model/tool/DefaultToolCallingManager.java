@@ -17,6 +17,7 @@
 package org.springframework.ai.model.tool;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import org.springframework.ai.tool.observation.ToolCallingObservationConvention;
 import org.springframework.ai.tool.observation.ToolCallingObservationDocumentation;
 import org.springframework.ai.tool.resolution.DelegatingToolCallbackResolver;
 import org.springframework.ai.tool.resolution.ToolCallbackResolver;
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -156,7 +158,12 @@ public final class DefaultToolCallingManager implements ToolCallingManager {
 	private static ToolContext buildToolContext(Prompt prompt, AssistantMessage assistantMessage) {
 		Map<String, Object> toolContextMap = Map.of();
 
-		if (prompt.getOptions() instanceof ToolCallingChatOptions toolCallingChatOptions
+		if (prompt.getOptionsCustomizer() instanceof ToolCallingChatOptions.Builder<?> customizer) {
+			DirectFieldAccessor accessor = new DirectFieldAccessor(customizer);
+			// Ughhh
+			toolContextMap = new HashMap<>((Map<String, Object>) accessor.getPropertyValue("toolContext"));
+		}
+		else if (prompt.getOptions() instanceof ToolCallingChatOptions toolCallingChatOptions
 				&& !CollectionUtils.isEmpty(toolCallingChatOptions.getToolContext())) {
 			toolContextMap = new HashMap<>(toolCallingChatOptions.getToolContext());
 		}
@@ -169,9 +176,17 @@ public final class DefaultToolCallingManager implements ToolCallingManager {
 	 */
 	private InternalToolExecutionResult executeToolCall(Prompt prompt, AssistantMessage assistantMessage,
 			ToolContext toolContext) {
-		List<ToolCallback> toolCallbacks = List.of();
-		if (prompt.getOptions() instanceof ToolCallingChatOptions toolCallingChatOptions) {
+		List<ToolCallback> toolCallbacks = null;
+		if (prompt.getOptionsCustomizer() instanceof ToolCallingChatOptions.Builder<?> customizer) {
+			// Ughh
+			toolCallbacks = (List<ToolCallback>) new DirectFieldAccessor(prompt.getOptionsCustomizer())
+				.getPropertyValue("toolCallbacks");
+		}
+		else if (prompt.getOptions() instanceof ToolCallingChatOptions toolCallingChatOptions) {
 			toolCallbacks = toolCallingChatOptions.getToolCallbacks();
+		}
+		if (toolCallbacks == null) {
+			toolCallbacks = Collections.emptyList();
 		}
 
 		List<ToolResponseMessage.ToolResponse> toolResponses = new ArrayList<>();

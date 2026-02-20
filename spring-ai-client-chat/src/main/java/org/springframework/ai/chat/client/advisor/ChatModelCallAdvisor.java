@@ -75,12 +75,21 @@ public final class ChatModelCallAdvisor implements CallAdvisor {
 		}
 
 		if (chatClientRequest.context().containsKey(ChatClientAttributes.STRUCTURED_OUTPUT_NATIVE.getKey())
-				&& StringUtils.hasText(outputSchema) && chatClientRequest.prompt()
-					.getOptionsCustomizer() instanceof StructuredOutputChatOptions.Builder<?> structuredOutputChatOptionsCustomizer) {
+				&& StringUtils.hasText(outputSchema)) {
 
-			structuredOutputChatOptionsCustomizer.outputSchema(outputSchema);
+			// TODO: remove once customizers are everywhere
+			if (chatClientRequest.prompt()
+				.getOptions() instanceof StructuredOutputChatOptions structuredOutputChatOptions) {
+				structuredOutputChatOptions.setOutputSchema(outputSchema);
+				return chatClientRequest;
+			}
+			else if (chatClientRequest.prompt()
+				.getOptionsCustomizer() instanceof StructuredOutputChatOptions.Builder<?> structuredOutputChatOptionsCustomizer) {
 
-			return chatClientRequest;
+				structuredOutputChatOptionsCustomizer.outputSchema(outputSchema);
+
+				return chatClientRequest;
+			}
 		}
 
 		Prompt augmentedPrompt = chatClientRequest.prompt()

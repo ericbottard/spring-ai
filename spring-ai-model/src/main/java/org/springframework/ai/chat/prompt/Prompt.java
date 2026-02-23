@@ -70,10 +70,12 @@ public class Prompt implements ModelRequest<List<Message>> {
 		this(Arrays.asList(messages), (ChatOptions) null);
 	}
 
+	// Only used in tests
 	public Prompt(String contents, @Nullable ChatOptions chatOptions) {
 		this(new UserMessage(contents), chatOptions);
 	}
 
+	// Only uszd in tests (and above)
 	public Prompt(Message message, @Nullable ChatOptions chatOptions) {
 		this(Collections.singletonList(message), chatOptions);
 	}

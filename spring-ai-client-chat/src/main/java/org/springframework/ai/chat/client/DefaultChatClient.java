@@ -1012,6 +1012,11 @@ public class DefaultChatClient implements ChatClient {
 
 		@Override
 		public CallResponseSpec call() {
+			// TODO: can access default options here and pass them to
+			// DefaultCallResponseSpec
+			// so that calls to responseXXX() merge options upfront
+			// this.chatModel.getDefaultOptions();
+
 			BaseAdvisorChain advisorChain = buildAdvisorChain();
 			return new DefaultCallResponseSpec(DefaultChatClientUtils.toChatClientRequest(this), advisorChain,
 					this.observationRegistry, this.chatClientObservationConvention);

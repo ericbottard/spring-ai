@@ -360,14 +360,13 @@ class OllamaChatModelIT extends BaseOllamaIT {
 			.call()
 			.entity(ActorsFilmsRecord.class);
 
+		assertThat(actorsFilms).isNotNull();
+		assertThat(actorsFilms.actor()).isEqualTo("Tom Hanks");
+		assertThat(actorsFilms.movies()).hasSize(5);
 		// Verify that native structured output was used
 		assertThat(nativeStructuredOutputUsed.get())
 			.as("Native structured output should be used with OllamaChatOptions.setFormat.")
 			.isTrue();
-
-		assertThat(actorsFilms).isNotNull();
-		assertThat(actorsFilms.actor()).isEqualTo("Tom Hanks");
-		assertThat(actorsFilms.movies()).hasSize(5);
 	}
 
 	@Test
